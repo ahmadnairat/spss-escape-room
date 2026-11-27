@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Escape the Locked Hospital Pharmacy – COMP122 SPSS Escape Room</title>
+<style>
+:root{--acq:#a1f5ed;--inq:#f8807f;--pra:#bb98dc;--pro:#bdea75;--dis:#7aaeea;--col:#ffd966;--ink:#1d2433}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(135deg,#0f2a44,#14506b);color:var(--ink);min-height:100vh}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 22px;background:#0b1e31;color:#fff}
+header h1{font-size:20px;margin:0}.hud{display:flex;gap:10px;flex-wrap:wrap}
+.pill{background:#ffffff1a;border:1px solid #ffffff33;border-radius:999px;padding:6px 14px;font-weight:600}
+#timer.low{background:#f8807f;color:#000}
+main{max-width:980px;margin:18px auto;padding:0 14px}
+.card{background:#fff;border-radius:14px;padding:18px 20px;margin-bottom:16px;box-shadow:0 6px 18px #0004}
+.story{background:var(--col)}.lvl{display:inline-block;border-radius:8px;padding:3px 10px;font-size:13px;font-weight:700;margin-right:6px}
+.l1{background:var(--acq)}.l2{background:var(--dis)}.l3{background:var(--pra)}.l4{background:var(--pro)}
+.lock{border-left:10px solid #ccc}.lock.open{border-left-color:#4caf50;opacity:.85}.lock.locked{filter:grayscale(1);opacity:.55;pointer-events:none}
+.lock h3{margin:4px 0 8px}.skill{font-size:13px;color:#555}
+input[type=text]{padding:9px 12px;font-size:16px;border:2px solid #999;border-radius:8px;width:220px}
+button{padding:9px 16px;font-size:15px;border:0;border-radius:8px;cursor:pointer;font-weight:600;margin:4px 4px 4px 0}
+.go{background:#14506b;color:#fff}.hint{background:var(--col)}.ok{color:#2e7d32;font-weight:700}.bad{color:#c62828;font-weight:700}
+.badges span{display:inline-block;margin:4px;padding:6px 10px;border-radius:10px;background:#eee;font-size:14px}.badges span.on{background:var(--pro)}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:var(--dis)}
+.privacy{background:#fff3f3;border-left:10px solid var(--inq)}
+.small{font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<header>
+ <h1>🏥💊 Escape the Locked Hospital Pharmacy</h1>
+ <div class="hud"><span class="pill" id="team">Team: –</span><span class="pill" id="level">Level 1 · Admission</span><span class="pill" id="pts">⭐ 0 pts</span><span class="pill" id="timer">⏱️ 60:00</span></div>
+</header>
+<main>
+<div class="card story" id="intro">
+ <h2>📖 Mission briefing</h2>
+ <p>It is 2 a.m. on the night shift at the Teaching Hospital. A power cut has frozen the clinical pharmacy's medication-adherence audit, and the quality committee needs the report at 8 a.m. The survey of 20 patients is locked behind six digital locks. Fifteen forms were recovered as <b>PatientSurvey_part1_P01-P15.xlsx</b>; five are still on paper (cards P16–P20). Use SPSS to recover the numbers – and keep every patient anonymous.</p>
+ <p class="small">Rules: 100 pts per lock · +20 first-try bonus · hint = −20 pts · +5 pts per minute left at the end · roles rotate every lock (Driver, Navigator, Checker, Recorder).</p>
+ <input type="text" id="teamName" placeholder="Team name"> <button class="go" onclick="start()">▶ Start the 60-minute timer</button>
+</div>
+<div id="game" style="display:none">
+ <div class="card"><b>Badges</b><div class="badges" id="badges"></div></div>
+ <div id="locks"></div>
+ <div class="card" id="leader"><h3>🏆 Leaderboard (this device)</h3><table id="lb"><tr><th>Team</th><th>Points</th><th>Time used</th></tr></table></div>
+</div>
+</main>
+<script>
+// answers are stored as hashes of the normalised answer (teacher key in SPSS_Escape_Room_Kit.docx)
+function h(s){s=String(s).trim().toLowerCase().replace(/\s+/g,' ').replace(/,/g,'').replace(/%$/,'').trim();let x=5381;for(const c of s)x=((x<<5)+x+c.charCodeAt(0))>>>0;return x.toString(36)}
+const L=[
+ {lvl:1,name:"Lock 1 – 🗄️ The Medication Vault",skill:"Variable View & Value Labels (Manual §9.3)",task:"Define the 13 survey variables in SPSS. Code = (number of String variables)(number of variables that need Value Labels)(number of decimals of BMI).",hs:["375xzv"],hints:["Text answers (patient code, drug name) cannot be numbers.","Tick-box questions (gender, ward, treatment duration) get Value Labels.","String: PID, Drug · Value labels: Gender, Ward, Duration · BMI has 1 decimal."]},
+ {lvl:1,name:"Lock 2 – 🔢 The Triage Door",skill:"Data entry + Sort Cases (§9.3)",task:"Enter cards P16–P20, then Data → Sort Cases by SBP (descending). Code = number of the first patient code + number of the last patient code (4 digits).",hs:["yjaooe","3762zi"],hints:["You need exactly 20 rows before sorting.","Sort by SBP, choose Descending.","Top P08, bottom P10."]},
+ {privacy:true,lvl:1,name:"🛡️ Privacy checkpoint",task:"Card P18 has a patient's name and mobile number written in the margin. What should your team do?",opts:["Type the name and number into SPSS so the data is complete","Paste the card into ChatGPT to check the handwriting","Enter only the anonymous code P18, do not record the name/number, and tell the game master","Ignore the card"],correct:2},
+ {lvl:2,name:"Lock 3 – 🥧 The Ward Safe",skill:"Frequencies + pie chart (§9.4)",task:"Analyze → Descriptive Statistics → Frequencies → Ward (pie chart). Enter the percentage of patients in Cardiology.",hs:["3hmvc","yjct2e"],hints:["Look at the Percent column.","Turn on Value Labels if you only see 1–4.","Cardiology = value 2: 6 of 20 patients."]},
+ {lvl:2,name:"Lock 4 – 📊 The Blood-Pressure Dial",skill:"Descriptives (§9.4)",task:"Descriptives on Age, SBP, BMI (Mean, SD, Min, Max). Enter the mean systolic blood pressure of all 20 patients (1 decimal).",hs:["37leis","yxi99w","375x5r"],hints:["Split File must be OFF; N = 20.","Mean column, SBP row.","135.80."]},
+ {lvl:3,name:"Lock 5 – ✂️ The Gender Split Lock",skill:"Split File (§9.4)",task:"Data → Split File → Organize output by groups → Gender. Enter the mean BMI of FEMALE patients (1 decimal).",hs:["yjc77z","38dqpw"],hints:["You should see two tables.","Use Gender = Female (n = 10).","27.26 → 27.3."]},
+ {lvl:3,name:"Lock 6 – 🧮 The Adherence Cipher",skill:"Compute Variable + If (§9.5)",task:"Compute AdhPct = (30 - Missed) / 30 * 100, If Age >= 60. Enter the mean AdhPct (1 decimal).",hs:["yjhh4j","3d7tkz"],hints:["Younger patients get a dot (system-missing).","Turn Split File OFF; condition Age >= 60.","Mean over 8 patients = 92.5."]},
+ {final:true,lvl:4,name:"🏁 Final Door – The Chart Key",skill:"Simple bar chart (§9.6)",task:"Graphs → Legacy Dialogs → Bar → Simple: MEAN(Missed) by Ward. Which ward has the highest mean number of missed doses?",opts:["Internal Medicine","Cardiology","Endocrinology","Outpatient Clinic"],correct:3}
+];
+const BADGES=[["🩺 Data Nurse","Level 1 complete"],["🛡️ Privacy Guardian","Privacy checkpoint"],["📊 Vital-Signs Analyst","Level 2 complete"],["💊 Adherence Pharmacist","Level 3 complete"],["🏥 Pharmacy Rescuer","Escaped!"]];
+const LV=["","Level 1 · Admission","Level 2 · Assessment","Level 3 · Treatment plan","Final door"];
+let pts=0,t=3600,timer=null,state=L.map(()=>({open:false,tries:0,hints:0})),got=new Set(),team="";
+
+function start(){team=document.getElementById('teamName').value.trim()||"Team";document.getElementById('team').textContent="Team: "+team;document.getElementById('intro').style.display='none';document.getElementById('game').style.display='block';render();timer=setInterval(tick,1000);showLB()}
+function tick(){t--;const m=String(Math.floor(t/60)).padStart(2,'0'),s=String(t%60).padStart(2,'0');const el=document.getElementById('timer');el.textContent="⏱️ "+m+":"+s;if(t<=300)el.classList.add('low');if(t<=0){clearInterval(timer);alert("Time is up! The pharmacy stays locked.");finish(false)}}
+function addPts(n){pts=Math.max(0,pts+n);document.getElementById('pts').textContent="⭐ "+pts+" pts"}
+function badge(i){got.add(i);renderBadges()}
+function renderBadges(){document.getElementById('badges').innerHTML=BADGES.map((b,i)=>`<span class="${got.has(i)?'on':''}" title="${b[1]}">${b[0]}</span>`).join('')}
+function firstOpen(){return state.findIndex(s=>!s.open)}
+function render(){renderBadges();const fo=firstOpen();const lvl=fo<0?4:L[fo].lvl;document.getElementById('level').textContent=LV[lvl];
+ document.getElementById('locks').innerHTML=L.map((l,i)=>{const s=state[i];const cls=s.open?'open':(i>fo&&fo>=0?'locked':'');
+ let body=`<span class="lvl l${l.lvl}">${LV[l.lvl]}</span><h3>${l.name}</h3>${l.skill?`<div class="skill">${l.skill}</div>`:''}<p>${l.task}</p>`;
+ if(s.open) body+=`<p class="ok">✅ Unlocked</p>`;
+ else if(l.opts) body+=l.opts.map((o,j)=>`<button class="go" onclick="choose(${i},${j})">${o}</button>`).join('')+`<div id="m${i}"></div>`;
+ else body+=`<input type="text" id="a${i}" placeholder="Enter code" onkeydown="if(event.key==='Enter')check(${i})"> <button class="go" onclick="check(${i})">🔓 Try</button> <button class="hint" onclick="hint(${i})">💡 Hint (−20)</button><div id="m${i}"></div><div id="hh${i}" class="small"></div>`;
+ return `<div class="card lock ${cls} ${l.privacy?'privacy':''}">${body}</div>`}).join('')}
+function unlock(i){const s=state[i];s.open=true;addPts(100+(s.tries===1&&s.hints===0&&!L[i].privacy?20:0));
+ if(i===1)badge(0);if(i===4)badge(2);if(i===6)badge(3);render();if(L[i].final)finish(true)}
+function check(i){const v=document.getElementById('a'+i).value;state[i].tries++;if(L[i].hs.includes(h(v)))unlock(i);else document.getElementById('m'+i).innerHTML='<span class="bad">🔒 Still locked – check your SPSS output.</span>'}
+function choose(i,j){state[i].tries++;if(j===L[i].correct){if(L[i].privacy){badge(1);addPts(-100+30)}unlock(i)}else document.getElementById('m'+i).innerHTML='<span class="bad">🔒 Not quite – think again.</span>'}
+function hint(i){const s=state[i];if(s.hints>=3)return;addPts(-20);document.getElementById('hh'+i).innerHTML+='💡 '+L[i].hints[s.hints]+'<br>';s.hints++}
+function finish(win){clearInterval(timer);if(win){badge(4);addPts(5*Math.floor(t/60));alert("🎉 You escaped! Final score: "+pts)}const lb=JSON.parse(localStorage.getItem('spssLB')||'[]');lb.push({team,pts,used:3600-t});lb.sort((a,b)=>b.pts-a.pts);localStorage.setItem('spssLB',JSON.stringify(lb.slice(0,10)));showLB()}
+function showLB(){const lb=JSON.parse(localStorage.getItem('spssLB')||'[]');document.getElementById('lb').innerHTML='<tr><th>Team</th><th>Points</th><th>Time used</th></tr>'+lb.map(r=>`<tr><td>${r.team}</td><td>${r.pts}</td><td>${Math.floor(r.used/60)} min</td></tr>`).join('')}
+</script>
+</body>
+</html>
